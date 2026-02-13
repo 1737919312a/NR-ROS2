@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ros2_robot_system</name>
+  <version>1.0.0</version>
+  <description>ROS 2 Cloud-Edge-End Collaborative Robot System for Intelligent Connected Vehicle Competition</description>
+  
+  <maintainer email="team@example.com">Development Team</maintainer>
+  <license>MIT</license>
+  
+  <url type="website">https://github.com/example/ros2-robot-system</url>
+  <url type="bugtracker">https://github.com/example/ros2-robot-system/issues</url>
+  
+  <author email="dev1@example.com">Developer 1</author>
+  <author email="dev2@example.com">Developer 2</author>
+  
+  <!-- 构建依赖 -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  
+  <!-- 编译依赖 -->
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>cv_bridge</depend>
+  
+  <!-- OpenCV -->
+  <build_depend>libopencv-dev</build_depend>
+  <exec_depend>libopencv-dev</exec_depend>
+  
+  <!-- AprilTag -->
+  <build_depend>libapriltag-dev</build_depend>
+  <exec_depend>libapriltag-dev</exec_depend>
+  
+  <!-- 测试依赖 -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  
+  <!-- 运行时依赖 -->
+  <exec_depend>ros2launch</exec_depend>
+  
+  <!-- 导出 -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
