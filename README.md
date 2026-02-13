@@ -20,6 +20,8 @@ ros2-robot-system/
 │   └── slave_mcu/              # 从机MCU
 │       └── slave_mcu_main.c    # 本地避障+跟随执行
 ├── edge/                       # 边缘端代码（RPi 4B）
+│   ├── microros_bridge/        # Micro-ROS桥接节点（核心）
+│   │   └── microros_bridge_node.cpp
 │   ├── lane_detection/         # 车道检测节点
 │   │   └── lane_detection_node.cpp
 │   └── apriltag_localization/  # AprilTag定位节点
@@ -149,6 +151,94 @@ static bool local_obstacle_check(void) {
 ---
 
 ## 二、边缘端（Raspberry Pi 4B）
+
+### 2.0 Micro-ROS桥接节点 (microros_bridge_node.cpp) ⭐核心模块
+
+#### 功能说明
+Micro-ROS桥接节点是边缘端的**核心通信枢纽**，负责MCU与ROS 2系统之间的数据转发：
+1. **串口通信**：通过USB连接主机MCU (ESP32-S3)
+2. **UDP通信**：通过WiFi连接从机MCU
+3. **数据发布**：将MCU数据转换为ROS 2消息发布
+4. **指令转发**：将ROS 2指令下发到MCU
+
+#### 通信架构
+
+```
+                    ┌─────────────────────────────────────┐
+                    │      Raspberry Pi 4B (边缘端)       │
+                    │                                     │
+   [主机MCU] ◄────►│  ┌─────────────────────────────┐   │
+   USB Serial       │  │   Micro-ROS Bridge Node     │   │
+   (921600 baud)    │  │                             │   │
+                    │  │  • LaserScan 发布           │◄──┼──► /scan
+   [从机MCU] ◄────►│  │  • Odometry 发布            │◄──┼──► /odom
+   WiFi UDP         │  │  • cmd_vel 订阅             │◄──┼──► /cmd_vel
+   (Port 8889)      │  │  • follow_cmd 订阅          │◄──┼──► /follow_cmd
+                    │  └─────────────────────────────┘   │
+                    └─────────────────────────────────────┘
+```
+
+#### 关键话题
+
+| 话题名称 | 方向 | 消息类型 | 说明 |
+|----------|------|----------|------|
+| `/scan` | 发布 | LaserScan | 激光扫描数据 |
+| `/odom` | 发布 | Odometry | 里程计数据 |
+| `/obstacle_status` | 发布 | Float32 | 障碍物距离 |
+| `/cmd_vel` | 订阅 | Twist | 速度指令 |
+| `/follow_cmd` | 订阅 | Twist | 跟随指令 |
+| `/bridge_connected` | 发布 | Bool | 连接状态 |
+| `/bridge_status` | 发布 | String | 详细状态 |
+
+#### 数据包格式
+
+```c
+// 串口数据包 (主机MCU)
+struct SerialPacket {
+    uint8_t header[2];      // 0xAA 0x55
+    uint8_t type;           // 包类型
+    // 数据载荷...
+    uint16_t checksum;      // 校验和
+};
+
+// UDP数据包 (从机MCU)
+struct UDPPacket {
+    uint8_t header[2];      // 0xAA 0x56
+    uint8_t type;           // 包类型
+    // 数据载荷...
+    uint16_t checksum;
+};
+```
+
+#### 注意事项
+
+| 问题 | 说明 | 解决方案 |
+|------|------|----------|
+| **串口权限** | 需要权限访问/dev/ttyUSB0 | `sudo usermod -a -G dialout $USER` |
+| **设备变化** | USB重新枚举导致设备名变化 | 使用udev规则创建固定符号链接 |
+| **超时检测** | MCU通信中断 | 1秒无数据标记为断开 |
+| **数据校验** | 传输错误 | 使用校验和验证 |
+
+#### 启动示例
+
+```bash
+# 基本启动
+ros2 run ros2_robot_system microros_bridge_node
+
+# 带参数启动
+ros2 run ros2_robot_system microros_bridge_node \
+    --ros-args \
+    -p serial_device:=/dev/ttyUSB0 \
+    -p serial_baud:=921600 \
+    -p udp_port_slave:=8889
+
+# 通过launch文件启动
+ros2 launch ros2_robot_system edge_nodes.launch.py \
+    microros_bridge:=true \
+    serial_device:=/dev/ttyUSB0
+```
+
+---
 
 ### 2.1 车道检测节点 (lane_detection_node.cpp)
 
@@ -394,7 +484,7 @@ ros2 run yolo_detection yolo_detection_node
 
 | 版本 | 日期 | 更新内容 |
 |------|------|----------|
-| v1.0 | 2024-01 | 初始版本，完成所有核心模块 |
+| v1.0 | 2026-02-13 | 初始版本，完成所有核心模块 |
 
 ---
 
