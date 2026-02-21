@@ -7,32 +7,22 @@
 ## 目录结构
 
 ```
-ros2-robot-system/
-├── include/                    # 公共头文件
-│   ├── common_types.h          # 公共类型定义
-│   ├── pid_controller.h        # PID控制器接口
-│   ├── pid_controller.c        # PID控制器实现
-│   ├── ld06_lidar.h            # LD06激光雷达接口
-│   └── ld06_lidar.c            # LD06激光雷达实现
-├── mcu/                        # MCU层代码（ESP32-S3）
-│   ├── host_mcu/               # 主机MCU
-│   │   └── host_mcu_main.c     # 传感器融合+电机控制
-│   └── slave_mcu/              # 从机MCU
-│       └── slave_mcu_main.c    # 本地避障+跟随执行
-├── edge/                       # 边缘端代码（RPi 4B）
-│   ├── microros_bridge/        # Micro-ROS桥接节点（核心）
-│   │   └── microros_bridge_node.cpp
-│   ├── lane_detection/         # 车道检测节点
-│   │   └── lane_detection_node.cpp
-│   └── apriltag_localization/  # AprilTag定位节点
-│       └── apriltag_node.cpp
-├── cloud/                      # 云端代码
-│   ├── yolo_detection/         # YOLO目标检测
-│   │   └── yolo_detection_node.cpp
-│   └── decision_comm/          # 决策通信模块
-│       └── decision_comm.cpp
-└── docs/                       # 文档
-    └── README.md
+NR-ROS2/
+├── common_types.h              # 公共类型定义
+├── pid_controller.h            # PID控制器接口
+├── pid_controller.c            # PID控制器实现
+├── ld06_lidar.h                # LD06激光雷达接口
+├── ld06_lidar.c                # LD06激光雷达实现
+├── host_mcu_main.c             # 主机MCU代码
+├── slave_mcu_main.c            # 从机MCU代码
+├── microros_bridge_node.cpp    # Micro-ROS桥接节点
+├── lane_detection_node.cpp     # 车道检测节点
+├── apriltag_node.cpp           # AprilTag定位节点
+├── yolo_detection_node.cpp     # YOLO目标检测节点
+├── decision_comm.cpp           # 决策通信模块
+├── edge_nodes.launch.py        # 边缘端启动文件
+├── cloud_nodes.launch.py       # 云端启动文件
+└── CMakeLists.txt              # ROS 2构建配置
 ```
 
 ---
@@ -403,17 +393,17 @@ idf.py flash
 # 创建工作空间
 mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws/src
-ln -s /path/to/ros2-robot-system/edge .
+ln -s /path/to/NR-ROS2 .
 
 # 编译
 cd ~/ros2_ws
 colcon build --symlink-install
 
 # 运行车道检测
-ros2 run lane_detection lane_detection_node
+ros2 run ros2_robot_system lane_detection_node
 
 # 运行AprilTag定位
-ros2 run apriltag_localization apriltag_node
+ros2 run ros2_robot_system apriltag_node
 ```
 
 ### 4.3 云端部署
@@ -423,7 +413,7 @@ ros2 run apriltag_localization apriltag_node
 pip install ultralytics tensorrt
 
 # 运行YOLO检测
-ros2 run yolo_detection yolo_detection_node
+ros2 run ros2_robot_system yolo_detection_node
 ```
 
 ---
