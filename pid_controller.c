@@ -60,12 +60,16 @@ float pid_compute(PIDController* pid, float setpoint,
     // 计算临时输出用于抗饱和判断
     float temp_output = p_term + pid->ki * pid->integral;
     
-    // 抗积分饱和：当输出饱和时停止积分
+    // 抗积分饱和：当输出饱和时限制积分（ki=0时跳过，避免除零）
     if (temp_output > pid->output_max) {
-        pid->integral = (pid->output_max - p_term) / pid->ki;
+        if (fabsf(pid->ki) > 1e-6f) {
+            pid->integral = (pid->output_max - p_term) / pid->ki;
+        }
         temp_output = pid->output_max;
     } else if (temp_output < pid->output_min) {
-        pid->integral = (pid->output_min - p_term) / pid->ki;
+        if (fabsf(pid->ki) > 1e-6f) {
+            pid->integral = (pid->output_min - p_term) / pid->ki;
+        }
         temp_output = pid->output_min;
     }
     
